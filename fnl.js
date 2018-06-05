@@ -363,6 +363,8 @@ const seq = (q_obs) => {
 const obs_to_cb = (obs, callback) => {
     let arr_all = [];
 
+    //console.log('obs_to_cb callback', callback);
+    //console.trace();
 
     obs.on('next', data => arr_all.push(data));
     obs.on('error', err => callback(err));
@@ -384,14 +386,59 @@ const obs_to_cb = (obs, callback) => {
             callback(null, last, arr_all);
 
         } else {
+            //console.log('callback', callback);
             callback(null, arr_all);
         }
     });
 }
+// an unpaging version...
+//  or put unpaging elsewhere, around the definition of observable function.
+
+// unpaged function
+// takes an observable that gives arrays (pages), breaks them up
+
+const unpage = (obs) => {
+
+    return observable((next, complete, error) => {
+
+        obs.on('next', arr_data => {
+            //console.log('arr_data', arr_data);
+
+            // Specialised processing for Command_Response_Message?
+
+            // An unpage function would be nice there.
+            //  or each_record
+
+            // Unpage would make sense because it can be used here, it's generic.
+
+            if ('unpaged' in arr_data) {
+                let unpaged = arr_data.unpaged;
+                for (let c = 0, l = unpaged.length; c < l; c++) {
+                    //console.log('unpaged[c]', unpaged[c]);
+                    next(unpaged[c]);
+                }
+            } else {
+                for (let c = 0, l = arr_data.length; c < l; c++) {
+                    next(arr_data[c]);
+                }
+            }
+        });
+        obs.on('complete', () => {
+            complete();
+        });
+        obs.on('error', err => error(err));
+        // Stop, pause, resume
+        return [];
+    });
+}
+
+
 
 const obs_or_cb = (obs, callback) => {
+    //console.log('obs_or_cb callback', callback);
     if (callback) {
         //console.log('is cb');
+        //console.log('has obs', obs);
         obs_to_cb(obs, callback);
     } else {
 
@@ -764,6 +811,8 @@ module.exports = {
     'sequence': seq,
     'sig_obs_or_cb': sig_obs_or_cb,
     'cb_to_prom_or_cb': cb_to_prom_or_cb,
-    'prom_or_cb': prom_or_cb
+    'prom_or_cb': prom_or_cb,
+    'obs_or_cb': obs_or_cb,
+    'unpage': unpage
 }
 
