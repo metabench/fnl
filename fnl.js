@@ -84,7 +84,7 @@ const get_a_sig = lang.get_a_sig;
 // could apply a list of filters.
 
 
-const observable = (fn_inner) => {
+const observable = (fn_inner, always_plural) => {
 
     // So that observable(orig_observable) = orig_observable
 
@@ -235,7 +235,7 @@ const observable = (fn_inner) => {
 
         // the whole thing in set immediate?
 
-        //console.log('then');
+        console.log('then');
         // what if it's already resolved?
 
 
@@ -251,25 +251,39 @@ const observable = (fn_inner) => {
 
         // but only one entry
 
-        //console.log('res.completed', res.completed);
+        console.log('res.completed', res.completed);
 
         if (res.completed) {
-            if (had_next && res_all.length > 1) {
-                handler(res_all);
+            if (had_next && res_all.length > 0) {
+                if (res_all.length > 1 || always_plural) {
+                    handler(res_all);
+                } else {
+                    handler(res_all[0]);
+                }
+
+                
             } else {
                 handler(last);
             }
         } else {
+
             res.complete(last => {
                 //console.log('complete last', last);
-                if (had_next && res_all.length > 1) {
-                    handler(res_all);
+                //console.log('had_next', had_next);
+                //console.log('res_all', res_all);
+                if (had_next && res_all.length > 0) {
+                    if (res_all.length > 1 || always_plural) {
+                        handler(res_all);
+                    } else {
+                        handler(res_all[0]);
+                    }
+
+                    
                 } else {
                     handler(last);
                 }
             })
         }
-
 
         // and error handling
     }
@@ -434,7 +448,7 @@ const unpage = (obs) => {
 
 
 
-const obs_or_cb = (obs, callback) => {
+const obs_or_cb = (obs, callback, always_plural) => {
     //console.log('obs_or_cb callback', callback);
     if (callback) {
         //console.log('is cb');
@@ -444,7 +458,7 @@ const obs_or_cb = (obs, callback) => {
 
 
 
-        return observable(obs);
+        return observable(obs, always_plural);
     }
 }
 
@@ -637,7 +651,7 @@ if (require.main === module) {
         }];
 
 
-    })
+    });
 
     /* .filter(data => {
         return data.v !== 8;
