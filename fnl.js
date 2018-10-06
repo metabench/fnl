@@ -307,12 +307,13 @@ const seq = (q_obs) => {
 }
 
 const obs_to_cb = (obs, callback) => {
+    let _obs = observable(obs);
     let arr_all = [];
     //console.log('obs_to_cb callback', callback);
     //console.trace();
-    obs.on('next', data => arr_all.push(data));
-    obs.on('error', err => callback(err));
-    obs.on('complete', last => {
+    _obs.on('next', data => arr_all.push(data));
+    _obs.on('error', err => callback(err));
+    _obs.on('complete', last => {
         //console.log('arr_all.length ', arr_all.length);
         /*
         if (arr_all.length === 0) {
