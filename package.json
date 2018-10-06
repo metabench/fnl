@@ -3,7 +3,7 @@
     "main": "fnl.js",
     "license": "MIT",
     "dependencies": {
-        "lang-mini": "^0.0.7"
+        "lang-mini": "^0.0.8"
     },
     "engines": {
         "node": ">=9.3.0"
@@ -14,5 +14,5 @@
         "type": "git",
         "url": "https://github.com/metabench/fnl.git"
     },
-    "version": "0.0.4"
+    "version": "0.0.5"
 }
