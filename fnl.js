@@ -57,7 +57,7 @@ const lang = require('lang-mini');
 const Evented_Class = lang.Evented_Class;
 const get_a_sig = lang.get_a_sig;
 const get_truth_map_from_arr = lang.get_truth_map_from_arr;
-const {tof} = lang;
+const {each, tof, mfp} = lang;
 
 const nce = (obs, next, complete, error) => {
     obs.on('next', next);
@@ -159,6 +159,8 @@ const observable = (fn_inner, always_plural, a2, a3) => {
             'status': data
         })
     }
+
+    // log before status?
 
 
     
@@ -263,6 +265,9 @@ const observable = (fn_inner, always_plural, a2, a3) => {
         return res;
     }
 
+    // maybe remove
+    //  external filter would maybe work better
+    //   and make a new obs that is filtered.
     res.filter = (fn_filter) => {
         this.filters = this.filters || [];
         this.filters.push(fn_filter);
@@ -271,6 +276,11 @@ const observable = (fn_inner, always_plural, a2, a3) => {
 
     // split observable
     //  will return 2 observables
+
+
+    // may be much better outside of obs.
+    //  call it like obssplit(obs, ...)
+    //   syntax will compress better.
 
     // validation split
     res.split = (fn_split) => {
@@ -366,6 +376,7 @@ const observable = (fn_inner, always_plural, a2, a3) => {
 
     // Likely to go for log and status, not meta.
 
+    // ?????
     res._ = new Evented_Class();
     res.meta = (k, v) => {
         if (v === undefined) {
@@ -507,6 +518,49 @@ const obscollect = (obs, fn_collect, arr_res) => {
     })
     return obs; // built for chaining fns.
 }
+
+const obspool = mfp({
+    '[f,a]': (fn_obs, arr_params) => {
+        console.log('[f,a]');
+        console.log('arr_params', arr_params);
+        //console.log('arguments', arguments);
+        // each of the arr params - create the observable
+        return observable((next, complete, error, status, log) => {
+            let c = arr_params.length;
+            // not pooling the complete data...?
+            each(arr_params, param => {
+                const res_obs = fn_obs(param);
+                res_obs.on('next', next);
+                res_obs.on('error', err => {
+                    c--;
+                    //error(err);
+
+                    // next(err)
+                    //  then need to check it's not an error object?
+                    // {type: 'error'}
+                    //  could be easier?
+                    
+
+                    // next with an error object?
+                    //  log it?
+                    log(err);
+
+                    if (c === 0) complete();
+                });
+                res_obs.on('complete', err => {
+                    c--;
+                    if (c === 0) complete();
+                });
+
+                // then will need to listen to see if they are all complete?
+                //  or all errored?
+
+                // Rules / option to allow this to stop_on_error
+                //  default being false.
+            })
+        })
+    }
+})
 
 // fcall
 //  an enhanced way of calling a function
@@ -912,6 +966,7 @@ module.exports = {
     'obsalias': obsalias,
     'obscollect': obscollect,
     'obsfilter': obsfilter,
+    'obspool': obspool,
     'seq': seq,
     'sequence': seq,
     'sig_obs_or_cb': sig_obs_or_cb,
