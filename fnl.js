@@ -56,21 +56,112 @@
 const lang = require('lang-mini');
 const Evented_Class = lang.Evented_Class;
 const get_a_sig = lang.get_a_sig;
+const get_truth_map_from_arr = lang.get_truth_map_from_arr;
+const {tof} = lang;
 
-const observable = (fn_inner, always_plural) => {
+const nce = (obs, next, complete, error) => {
+    obs.on('next', next);
+    obs.on('complete', complete);
+    obs.on('error', error);
+    return obs;
+}
+
+/*
+const obs = (next, complete, error) => {
+    let res = new Evented_Class();
+
+}
+*/
+
+//
+
+const observable = (fn_inner, always_plural, a2, a3) => {
+    // (observable, n other functions)
+
+    // want there to be a log array too.
+    //  the observable, while it is executing, can add to its log.
+    //   better than a meta or direct reference right now.
+    //   then other functions can view the observables' logs
+
+
     // So that observable(orig_observable) = orig_observable
 
+    // but with other functions, want to use these to observe the observable.
+
+
     if (fn_inner.__type_name === 'observable') {
+
+        // l === 2
+        // 3
+        // 4
+
+        // the rest of the arguments too...?
+
+        // obs, fn_next, fn_complete, fn_error
+
+        const [obs, next, complete, error] = [fn_inner, always_plural, a2, a3];
+        obs.on('next', next);
+        obs.on('complete', complete);
+        obs.on('error', error);
+
+        // use obs() to observe an observable
+
         return fn_inner;
     }
 
     // call the inner function, it assigns event triggers / raises
     // and get three functions coming in
     // on the next tick?
+    // Evented class that holds back with async?
+
     let res = new Evented_Class();
     // Not sure about this.
     //  allows functions that resolve immediately to be thenable.
     //setImmediate(() => {
+
+    // the last one could be a log function.
+
+    // Don't want an infinite log (in come cases).
+    let llog = [];
+    //  will need to be able to find the log total size.
+
+    // and a status function too.
+    //  maybe status should automatically log its data too.
+    //  status before log?
+    //  need to tell it what the new status is.
+    //   could use codes.
+    //    then could use a status table as well.
+    //     so can plug in a status table to an http/https downloader
+    //
+
+
+    // will have this.status propery.
+
+
+
+    // use OO Object_Status?
+    //  OO Log_Item?
+    //   This could handle creating a GUID automatically.
+    //    
+
+    let _status = '';
+    // won't only be a string.
+
+    let log = (data) => {
+        const log_item = [Date.now(), data];
+        llog.push(log_item);
+        res.raise('log', log_item);
+    }
+
+    const status = (data) => {
+        _status = data;
+        log({
+            'status': data
+        })
+    }
+
+
+    
 
     [stop, pause, resume] = fn_inner(data => {
         // And could apply a filter here.
@@ -94,6 +185,20 @@ const observable = (fn_inner, always_plural) => {
         //});
     }, error => {
         res.raise('error', error);
+    }, status, log) || [];
+
+    Object.defineProperty(res, 'log', {
+        get() {
+            // Could clone it for security so it can't be changed
+            return llog;
+        }
+    });
+
+    Object.defineProperty(res, 'status', {
+        get() {
+            // Could clone it for security so it can't be changed
+            return _status;
+        }
     });
 
     // and raise pause events too.
@@ -124,11 +229,34 @@ const observable = (fn_inner, always_plural) => {
         // 
         //setImmediate(() => {
         //console.log('res complete');
-        res.completed = true;
+        //res.completed = true;
+
+        // not here...
+        //  this is for setting up the complete handler.
+
+        //res.res = 
         res.on('complete', handler);
+
         //});
         return res;
     }
+
+    // copy the result when complete?
+    //  the .data to .res
+
+    res.on('complete', data => {
+        if (data) {
+
+            if (data.data) {
+                res.res = data.data;
+            } else {
+                res.res = data;
+            }
+
+            
+        }
+    })
+
     res.done = res.end = res.complete;
     res.error = handler => {
         res.on('error', handler);
@@ -198,8 +326,6 @@ const observable = (fn_inner, always_plural) => {
         //console.log('res.completed', res.completed);
 
         //console.log('always_plural', always_plural);
-
-
         if (res.completed) {
             if (had_next && res_all.length > 0) {
                 if (res_all.length > 1 || always_plural) {
@@ -233,7 +359,25 @@ const observable = (fn_inner, always_plural) => {
     }
 
     res.__type_name = 'observable';
+
+    // Could make these static read-only.
+    res._is_obs = res._is_observable = true;
     //})
+
+    // Likely to go for log and status, not meta.
+
+    res._ = new Evented_Class();
+    res.meta = (k, v) => {
+        if (v === undefined) {
+            // just the key
+        } else {
+            res._[key] = value;
+            res._.raise('change', {
+                key: k,
+                value: v
+            })
+        }
+    }
 
     // don't want this 'target' value added to the object.
     //  useful in DOM processing but not elsewhere.
@@ -265,9 +409,100 @@ const observable = (fn_inner, always_plural) => {
     return res;
 }
 
+//obsfilter
+// by default will filter the 'next'
+//  returns a new observable that's filtered.
+//   So we can get a filtered output but also process the original because its still there.
+
+
+// a filter function.
+
+// obs.filter could generate a new observable with the filtering function.
+// but the obsfilter function would compress better.
+
+const obsfilter = (obs, next_filter) => observable((next, complete, error) => {
+    obs.on('next', data => {
+        if (next_filter(data)) {
+            next(data);
+        }
+    })
+    obs.on('complete', data => {
+        if (data) {
+            complete(data)
+        } else {
+            complete();
+        }
+    })
+    obs.on('error', err => {
+        error(err);
+    })
+
+})
+
+
+const obsalias = (obs_like, mapping) => {
+
+    let next, complete, error;
+
+    // mfp would help here.
+    //  Compiler has improved a lot in many cases since fp was first made.
+    const tmapping = tof(mapping);
+    if (tmapping === 'array') {
+        [next, complete, error] = mapping;
+    } else if (tmapping === 'object') {
+        //{next, complete, error} = mapping;
+        next = mapping.next;
+        complete = mapping.complete;
+        error = mapping.error;
+    }
+    return observable((n, c, e) => {
+        if (next) {
+            obs_like.on(next, n);
+        } else {
+            obs_like.on('next', n);
+        }
+
+        if (complete) {
+            obs_like.on(complete, n);
+        } else {
+            obs_like.on('complete', n);
+        }
+
+        if (error) {
+            obs_like.on(error, n);
+        } else {
+            obs_like.on('error', n);
+        }
+
+    })
+
+    // should be strings...
+
+    /*
+
+    console.log('Object.keys(obs_like)', Object.keys(obs_like));
+
+    const k = Object.keys(obs_like);
+    // make a map from them...
+    const km = get_truth_map_from_arr(k);
+    console.log('km', km);
+
+    if (km._events) {
+        console.log('Object.keys(km._events)', Object.keys(km._events));
+        console.log('obs_like._events', obs_like._events);
+        console.log('obs_like._eventsCount', obs_like._eventsCount);
+    }
+
+    throw 'stop';
+    */
+}
+
 // fcall
 //  an enhanced way of calling a function
 
+// Pausable sequence
+
+// not so sure about the usage right now.
 const seq = (q_obs) => {
     return observable((next, complete, error) => {
         let c = 0,
@@ -334,6 +569,8 @@ const obs_to_cb = (obs, callback) => {
 }
 // an unpaging version...
 //  or put unpaging elsewhere, around the definition of observable function.
+
+// page / chunked
 
 // unpaged function
 // takes an observable that gives arrays (pages), breaks them up
@@ -423,6 +660,9 @@ const sig_obs_or_cb = (a, inner) => {
 
 // -------------- Promises ----------------
 // ________________________________________
+
+
+// Just give it a function...?
 
 const cb_to_prom_or_cb = (inner_with_cb, opt_cb) => {
     if (typeof opt_cb !== 'undefined') {
@@ -623,8 +863,43 @@ if (require.main === module) {
 
 }
 
+const is_obs = obj => {
+    return obj.is_obs === true;
+}
+const is_prom = obj => {
+    return obj instanceof Promise || obj.is_obs === true;
+}
+
+// Multi-type specifier
+const obs_prom_arr_item = (obj, obs, prom, arr, item) => {
+    if (obj.is_obs === true) {
+        return obs(obj);
+    } else {
+        if (obj instanceof Promise) {
+            return prom(obj);
+        } else {
+            if (Array.isArray(obj)) {
+                return arr(obj)
+            } else {
+                return item(obj);
+            }
+        }
+    }
+}
+
+// limit
+
+// limit the number of results from an observable
+//  then stop
+
+
+
 module.exports = {
     'observable': observable,
+    'nce': nce,
+    'obs': observable,
+    'obsalias': obsalias,
+    'obsfilter': obsfilter,
     'seq': seq,
     'sequence': seq,
     'sig_obs_or_cb': sig_obs_or_cb,
@@ -632,5 +907,8 @@ module.exports = {
     'prom_or_cb': prom_or_cb,
     'prom': prom,
     'obs_or_cb': obs_or_cb,
-    'unpage': unpage
+    'unpage': unpage,
+    'is_obs': is_obs,
+    'is_prom': is_prom,
+    'obs_prom_arr_item': obs_prom_arr_item
 }
