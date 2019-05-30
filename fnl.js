@@ -437,6 +437,7 @@ const obsfilter = (obs, next_filter) => observable((next, complete, error) => {
         error(err);
     })
 
+
 })
 
 
@@ -461,17 +462,19 @@ const obsalias = (obs_like, mapping) => {
         } else {
             obs_like.on('next', n);
         }
+        //console.log('!!complete', !!complete);
+        //console.log('complete', complete);
 
         if (complete) {
-            obs_like.on(complete, n);
+            obs_like.on(complete, c);
         } else {
-            obs_like.on('complete', n);
+            obs_like.on('complete', c);
         }
 
         if (error) {
-            obs_like.on(error, n);
+            obs_like.on(error, e);
         } else {
-            obs_like.on('error', n);
+            obs_like.on('error', e);
         }
 
     })
@@ -495,6 +498,14 @@ const obsalias = (obs_like, mapping) => {
 
     throw 'stop';
     */
+}
+
+const obscollect = (obs, fn_collect, arr_res) => {
+    obs.on('next', data => {
+        const item_res = fn_collect(data);
+        arr_res.push(item_res);
+    })
+    return obs; // built for chaining fns.
 }
 
 // fcall
@@ -899,6 +910,7 @@ module.exports = {
     'nce': nce,
     'obs': observable,
     'obsalias': obsalias,
+    'obscollect': obscollect,
     'obsfilter': obsfilter,
     'seq': seq,
     'sequence': seq,
