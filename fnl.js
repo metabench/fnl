@@ -110,6 +110,8 @@
 
 const log = () => {};
 
+//const log = console.log;
+
 // Could have one overriding fnl function?
 //  Not yet.
 
@@ -164,10 +166,6 @@ const log = () => {};
 // possibilities such as getting the event processing info as its own observable?
 
 // move stages processing out of observable?
-
-
-
-
 
 
 //  
@@ -1125,21 +1123,41 @@ const observable = function(fn_inner, opts) {
 
         // Maybe better not to have the timeout when debugging / looking at the callstack.
 
+        let had_next = false, had_complete = false, had_error = false;
+
         setTimeout(() => {
             [stop, pause, resume] = fn_inner(data => {
                 // And could apply a filter here.
                 //  Could apply a number of filters.
+
+                // can not have raised complete or error.
+
                 let passes = true;
+
+                had_next = true;
+                // but only if not had an error or complete.
+                if (!had_complete && !had_error) {
+                    if (this.filters) {
+                        for (let filter of this.filters) {
+                            passes = filter(data);
+                            if (!passes) break;
+                        }
+                    }
+                } else {
+                    if (had_complete) {
+                        // Only a warn I think?
+                        console.warn('Observable can not raise "next" event after having raised its "complete" event.')
+                    }
+                    if (had_error) {
+                        console.warn('Observable can not raise "next" event after having raised its "error" event.')
+                    }
+                }
+
 
                 // Maybe remove filtering?
                 //  Or filtering here is more efficient?
 
-                if (this.filters) {
-                    for (let filter of this.filters) {
-                        passes = filter(data);
-                        if (!passes) break;
-                    }
-                }
+                
 
                 // check the type of what's bein returned here?
                 // keep track of it?
@@ -1157,82 +1175,116 @@ const observable = function(fn_inner, opts) {
                 //   This is an important thing to know.
                 //    Is this the final at least slightly tricky thing to solve?
 
-                const tld = tf(last_data);
-                //console.log('obs complete function called');
-                //console.log('should now check if any io is still going. if not, raise io.complete');
+                if (!had_complete && !had_error) {
+                    had_complete = true;
+                    const tld = tf(last_data);
+                    //console.log('obs complete function called');
+                    //console.log('should now check if any io is still going. if not, raise io.complete');
 
-                //console.log('tld', tld);
-                //console.trace();
+                    //console.log('tld', tld);
+                    //console.trace();
 
 
-                // Give more thought towards if .io complete is the best way.
-                //setImmediate(() => {
-                //log('!!last_data', !!last_data);
-                // Seems like we could do with noticing output-start event. <- do that now.
-                // stage.input, stage.output?
-                //  clearer definitions there?
-                //   output based on a description of what happens to the input? can be calculated / known in advance anyway???
-                //  especially when it's a stream / observable.
-                // definitely want the io timings
-                //  then will work on collecting io sizes
-                //  then will work on calculating io rates
-                // set the ms_complete value as well.
-                //  make it a read_only property? enumerable as well?
-                // An error doesn't seem to appear in here. look into it.
-                // optimize date calls?
-                // observable complete.
-                // do this for has-response as well.
-                //  that's an event (where the latency gets set)
-                //record_res_ms('complete');
-                const ms_complete = Date.now();
+                    // Give more thought towards if .io complete is the best way.
+                    //setImmediate(() => {
+                    //log('!!last_data', !!last_data);
+                    // Seems like we could do with noticing output-start event. <- do that now.
+                    // stage.input, stage.output?
+                    //  clearer definitions there?
+                    //   output based on a description of what happens to the input? can be calculated / known in advance anyway???
+                    //  especially when it's a stream / observable.
+                    // definitely want the io timings
+                    //  then will work on collecting io sizes
+                    //  then will work on calculating io rates
+                    // set the ms_complete value as well.
+                    //  make it a read_only property? enumerable as well?
+                    // An error doesn't seem to appear in here. look into it.
+                    // optimize date calls?
+                    // observable complete.
+                    // do this for has-response as well.
+                    //  that's an event (where the latency gets set)
+                    //record_res_ms('complete');
+                    const ms_complete = Date.now();
 
-                res.ms_complete = ms_complete;
-                res.ms_taken = ms_complete - ms_start;
+                    res.ms_complete = ms_complete;
+                    res.ms_taken = ms_complete - ms_start;
 
-                // ms_latency for consistency.
-                //  only for staged functions so far?
-                //  or could respond to the 'have-response' / 'response' / 'main-response' event.
-                // listen for the main stage response?
-                //  to begin with, want to build up more detailed stages data in the res.stages array.
-                //res.ms.taken = res.ms.rel.start.complete;
-                //res.ms_taken = ms_since_start();
-                //res.ms_complete = Date.now();
-                // and ms.taken is the relative measurement between start and complete.
-                // ms complete is the absolute time measurement
-                //  or ms_taken is better
-                //log('res.ms_complete', res.ms_complete);
+                    // ms_latency for consistency.
+                    //  only for staged functions so far?
+                    //  or could respond to the 'have-response' / 'response' / 'main-response' event.
+                    // listen for the main stage response?
+                    //  to begin with, want to build up more detailed stages data in the res.stages array.
+                    //res.ms.taken = res.ms.rel.start.complete;
+                    //res.ms_taken = ms_since_start();
+                    //res.ms_complete = Date.now();
+                    // and ms.taken is the relative measurement between start and complete.
+                    // ms complete is the absolute time measurement
+                    //  or ms_taken is better
+                    //log('res.ms_complete', res.ms_complete);
 
-                if (tld !== 'u') {
-                    // See if it's an (ongoing?) readable stream?
-                    if (tld === 'R') {
-                        // Can we see the stage or status of the R?
-                        // listen for the complete event...?
-                        // Need to put the last data inside a wrapper object?
-                        // 
-                        io.ongoing = true;
-                        // Monitoring not standard within observable.
-                        last_data.on('complete', () => {
-                            io.ongoing = false;
+                    if (tld !== 'u') {
+                        // See if it's an (ongoing?) readable stream?
+                        if (tld === 'R') {
+                            // Can we see the stage or status of the R?
+                            // listen for the complete event...?
+                            // Need to put the last data inside a wrapper object?
+                            // 
+                            io.ongoing = true;
+                            // Monitoring not standard within observable.
+                            last_data.on('complete', () => {
+                                io.ongoing = false;
+                                io.raise('complete');
+                            });
+                        } else {
+                            console.log('not an R, will raise complete and .io complete now');
+
+                            res.raise('complete', last_data);
+                            // io.complete = true?
+                            // raise the io.complete event?
                             io.raise('complete');
-                        });
+
+                            // 
+                            // Should be complete enough...?
+                        }
+                        
                     } else {
-                        console.log('not an R, will raise complete and .io complete now');
-
-                        res.raise('complete', last_data);
-                        // io.complete = true?
-                        // raise the io.complete event?
-                        io.raise('complete');
-
-                        // 
-                        // Should be complete enough...?
+                        res.raise('complete');
                     }
-                    
+
                 } else {
-                    res.raise('complete');
+                    if (had_complete) {
+                        // Only a warn I think?
+                        console.warn('WARNING: Observable can not raise "complete" event after having raised it already.')
+                    }
+                    if (had_error) {
+                        console.warn('WARNING: Observable can not raise "complete" event after having raised its "error" event.')
+                    }
+
                 }
+
+                
                 //});
             }, error => {
-                res.raise('error', error);
+
+                if (!had_complete && !had_error) {
+                    had_error = true;
+                    // Can only raise error once.
+                    //  After an error, it should stop, and will not produce further results.
+                    console.log('error being raised', error);
+                    console.log('tof error', tof(error));
+                    res.raise('error', error);
+                } else {
+                    if (had_complete) {
+                        // Only a warn I think?
+                        console.warn('WARNING: Observable can not raise "error" event after having raised its "complete" event.')
+                    }
+                    if (had_error) {
+                        console.warn('WARNING: Observable can not raise "error" event after having raised it already.')
+                    }
+                }
+
+
+                
             }, status, log) || [];
 
             // status before log!!!
@@ -1285,10 +1337,6 @@ const observable = function(fn_inner, opts) {
             //  As do some of the stages
             //   But it is only when all the stages are over does io complete get called.
 
-
-
-
-
             // and stage to 'complete'.
             // don't store res?
             //  leads to memory leak?
@@ -1315,7 +1363,11 @@ const observable = function(fn_inner, opts) {
             //log('then');
             // what if it's already resolved?
             let res_all = [];
-            let had_next = false;
+            
+
+
+
+
             res.next(data => {
                 res_all.push(data);
                 had_next = true;
@@ -3013,6 +3065,8 @@ module.exports = {
 }
 
 if (require.main === module) {
+
+    console.log('running fnl as main');
     // Could return its stop function.
     //  Use its next, complete, error functions in one closure
     //  Get back its stop, pause, resume functions as the result in an array
@@ -3041,9 +3095,13 @@ if (require.main === module) {
     // Maybe return a data_source itself? or the data source is simply a function being executed.
     // This looks like it could tidy up some server code.
 
-    let obs = observable((next, complete, error) => {
+    const make_timer_obs = () => observable((next, complete, error) => {
         let c = 2;
         let paused = false;
+
+        let cease = () => {
+            clearInterval(ivl);
+        }
 
         let stop = () => {
             clearInterval(ivl);
@@ -3058,6 +3116,14 @@ if (require.main === module) {
                     'v': v
                 });
                 c++;
+
+                if (c > 6) {
+                    error(new Error('A problem'));
+                    cease();
+                    // After error, should not allow 'next' or 'complete'.
+
+                }
+
                 if (c > 8) {
                     stop();
                 }
@@ -3072,6 +3138,10 @@ if (require.main === module) {
         }];
     });
 
+    let obs = make_timer_obs();
+
+
+
     /* .filter(data => {
         return data.v !== 8;
     }).filter(data => {
@@ -3083,11 +3153,12 @@ if (require.main === module) {
     let test_obs = () => {
         obs.on('paused', () => log('* paused'));
         obs.on('resumed', () => log('* resumed'));
+        obs.on('error', (err) => log('* error', err));
         obs.next(data => {
             log('data', data);
         });
     }
-    //test_obs();
+    test_obs();
 
     let test_then = () => {
         (async () => {
