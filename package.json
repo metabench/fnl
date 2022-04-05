@@ -3,13 +3,13 @@
     "main": "fnl.js",
     "license": "MIT",
     "dependencies": {
-        "lang-mini": "^0.0.15"
+        "lang-mini": "^0.0.24"
     },
-    "devDependencies": {
-        "jest": "^24.8.0"
+    "comment_devDependencies": {
+        "jest": "^27.5.1"
     },
     "engines": {
-        "node": ">=9.3.0"
+        "node": ">=12.0.0"
     },
     "description": "Observables and related tooling for calling and expressing functions.",
     "author": "James Vickers <james@metabench.com>",
@@ -17,5 +17,5 @@
         "type": "git",
         "url": "https://github.com/metabench/fnl.git"
     },
-    "version": "0.0.15"
+    "version": "0.0.21"
 }

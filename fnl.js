@@ -1,3 +1,12 @@
+
+//const lang = require('lang-mini');
+//const Evented_Class = lang.Evented_Class;
+//const get_a_sig = lang.get_a_sig;
+//const get_truth_map_from_arr = lang.get_truth_map_from_arr;
+const {each, Evented_Class, get_a_sig, get_truth_map_from_arr, tof, tf, mfp, deep_sig, clone, def} = require('lang-mini');
+const fn_io_transform = require('./fn-io-transform');
+
+
 /*
     18/06/2019 - New version, will use io transform and measurement abstractions.
 
@@ -444,13 +453,6 @@ input-stream-complete / end?
 
 
 
-const lang = require('lang-mini');
-const Evented_Class = lang.Evented_Class;
-const get_a_sig = lang.get_a_sig;
-const get_truth_map_from_arr = lang.get_truth_map_from_arr;
-const {each, tof, tf, mfp, deep_sig, clone, def} = lang;
-const fn_io_transform = require('./fn-io-transform');
-
 
 // Want rates and stage rates easily available in staged fn results.
 //  Can have rates for various streams
@@ -703,9 +705,17 @@ const observable = function(fn_inner, opts) {
         _opts = a[0];
         _fn_inner = a[1];
     } else {
-        console.log('sig', sig);
-        console.trace();
-        throw 'NYI';
+
+        if (sig === '[O]' || sig === '[O,u]') {
+            return a[0];
+        } else {
+            console.log('sig', sig);
+            console.trace();
+            throw 'NYI';
+        }
+        // when we already have an observable - not sure why wrapping would again be attempted.
+
+        
     }
 
 
@@ -1236,7 +1246,7 @@ const observable = function(fn_inner, opts) {
                                 io.raise('complete');
                             });
                         } else {
-                            console.log('not an R, will raise complete and .io complete now');
+                            //console.log('not an R, will raise complete and .io complete now');
 
                             res.raise('complete', last_data);
                             // io.complete = true?
@@ -1270,8 +1280,8 @@ const observable = function(fn_inner, opts) {
                     had_error = true;
                     // Can only raise error once.
                     //  After an error, it should stop, and will not produce further results.
-                    console.log('error being raised', error);
-                    console.log('tof error', tof(error));
+                    //console.log('error being raised', error);
+                    //console.log('tof error', tof(error));
                     res.raise('error', error);
                 } else {
                     if (had_complete) {
@@ -1374,8 +1384,15 @@ const observable = function(fn_inner, opts) {
             });
     
             if (res.completed) {
+
+                if (res.singular_result) {
+                    handler(res_all[0]);
+                } else {
+                    handler(res_all);
+                }
+
                 //res.ms.taken = res.ms.rel.start.complete;
-                handler(res_all);
+                
             } else {
                 res.complete(last => {
                     //res.ms.taken = res.ms.rel.start.complete;
@@ -1384,7 +1401,13 @@ const observable = function(fn_inner, opts) {
                     //log('had_next', had_next);
                     //log('res_all', res_all);
                     if (had_next && res_all.length > 0) {
-                        handler(res_all);
+                        if (res.singular_result) {
+                            handler(res_all[0]);
+                        } else {
+                            handler(res_all);
+                        }
+
+
                     } else {
                         handler(last);
                     }
