@@ -654,6 +654,12 @@ const tm_status_strings = {
 // 
 
 
+// Named observables may be of use
+//  Where the returned observable object has a name
+
+// Identified observables
+//  Where the returned observable object has a unique (probably ascending) id
+
 const observable = function(fn_inner, opts) {
     // 12/06/2019 - much improved.
     // 13/06/2019 - working on stages events API
@@ -735,7 +741,9 @@ const observable = function(fn_inner, opts) {
         const ms_start = Date.now();
         // ms.abs, ms.rel
         const ms_since_start = () => Date.now() - ms_start;
-        let res = new Evented_Class();
+        const res = new Evented_Class();
+
+        // make that optional?
         const io = res.io = new Evented_Class();
 
 
@@ -1136,7 +1144,17 @@ const observable = function(fn_inner, opts) {
         let had_next = false, had_complete = false, had_error = false;
 
         setTimeout(() => {
-            [stop, pause, resume] = fn_inner(data => {
+            //console.log('fn_inner', fn_inner);
+
+            // the inner function could be an async function....
+            //console.trace();
+
+            // Inner function should not be async???
+            //  Should be sync to return these functions as results.
+
+            // If it is async, we can't use those fns?
+
+            const [stop, pause, resume] = fn_inner(data => {
                 // And could apply a filter here.
                 //  Could apply a number of filters.
 
@@ -1373,9 +1391,6 @@ const observable = function(fn_inner, opts) {
             //log('then');
             // what if it's already resolved?
             let res_all = [];
-            
-
-
 
 
             res.next(data => {
