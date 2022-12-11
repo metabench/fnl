@@ -918,6 +918,10 @@ const observable = function(fn_inner, opts) {
 
         // stages will simply be names.
         //  status can have accompanying data.
+
+        // Could there just be a status object?
+        //  Maybe don't need to map / track status changes.
+
         const status = (str_status, data) => {
             if (tm_status_strings[str_status]) {
                 const old_status = _status;
@@ -1342,6 +1346,10 @@ const observable = function(fn_inner, opts) {
             res.on('complete', handler);
             return res;
         }
+
+
+        // and a res.statud handler?
+
         // copy the result when complete?
         //  the .data to .res
     
@@ -1514,6 +1522,12 @@ const obsfilter = (obs, next_filter) => observable((next, complete, error) => {
     })
 });
 // Examples, tests!!!
+
+const obsmap = (obs, fn_map) => observable((next, complete, error) => {
+    obs.on('next', data => next(fn_map(data)));
+    obs.on('complete', complete);
+    obs.on('error', error);
+});
 
 const obsalias = (obs_like, mapping) => {
 
@@ -3088,6 +3102,7 @@ module.exports = {
     'obscollect': obscollect,
     'obsfilter': obsfilter,
     'obspool': obspool,
+    'obsmap': obsmap,
     'seq': seq,
     'sequence': seq,
     'sig_obs_or_cb': sig_obs_or_cb,

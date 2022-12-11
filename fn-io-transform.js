@@ -21,6 +21,12 @@
 //  that seems like it would be more applicable to stages()
 //  seems useful for getting io data rates, and transformation rates?
 
+// https://www.npmjs.com/package/bson
+//  Would be quite simple to get BSON up and running quickly as an optional encoding method.
+
+
+
+
 
 const {deep_sig} = require('lang-mini');
 

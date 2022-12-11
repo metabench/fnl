@@ -1,4 +1,4 @@
-const {obs} = require('../old/fnl');
+const {obs, obsmap} = require('../fnl');
 
 const {mfp} = require('lang-mini');
 
@@ -29,5 +29,9 @@ let counter = mfp({
     }
     tick();
 }));
+
+// And could transform that counter's output...
+
+
 
 module.exports = counter;

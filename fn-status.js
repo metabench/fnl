@@ -117,7 +117,7 @@
 
 
 
-
+// Including status updates in fnl obs makes most sense.
 
 const fn_wrap_status = (fn) => {
 
