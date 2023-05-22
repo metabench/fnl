@@ -3,10 +3,10 @@
     "main": "fnl.js",
     "license": "MIT",
     "dependencies": {
-        "lang-mini": "^0.0.28"
+        "lang-mini": "^0.0.29"
     },
     "devDependencies": {
-        "mocha": "^10.1.0"
+        "mocha": "^10.2.0"
     },
     "comment_devDependencies": {
         "jest": "^27.5.1"
@@ -20,5 +20,5 @@
         "type": "git",
         "url": "https://github.com/metabench/fnl.git"
     },
-    "version": "0.0.24"
+    "version": "0.0.25"
 }

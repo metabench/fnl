@@ -660,6 +660,11 @@ const tm_status_strings = {
 // Identified observables
 //  Where the returned observable object has a unique (probably ascending) id
 
+
+// Event name aliasing could help.
+// It can be convenient and intuitive to program a 'data' event rather than a 'next' event.
+// Raising them both would help.
+
 const observable = function(fn_inner, opts) {
     // 12/06/2019 - much improved.
     // 13/06/2019 - working on stages events API
@@ -1200,7 +1205,10 @@ const observable = function(fn_inner, opts) {
 
                 // as does .io complete.
 
-                if (passes) res.raise('next', data);
+                if (passes) {
+                    res.raise('next', data);
+                    res.raise('data', data);
+                }
             }, last_data => {
                 // The observable complete event
                 //  Are we still waiting on any output?

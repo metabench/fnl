@@ -88,10 +88,32 @@ const eg_counting = () => {
 
     // events not being raised????
     o_counter.on('next', data => {
-        console.log('o_counter data', data);
+        console.log('o_counter next data', data);
     })
     o_counter.on('complete', (complete_data) => {
         console.log('o_counter complete complete_data:', complete_data);
+
+
+        const o_counter = counter();
+        console.log('!!o_counter', !!o_counter);
+
+        // Need tests and examples on Evented_Class too.
+
+        // events not being raised????
+        o_counter.on('data', data => {
+            console.log('o_counter data data', data);
+        })
+        o_counter.on('complete', (complete_data) => {
+            console.log('o_counter complete complete_data:', complete_data);
+
+
+            
+
+        })
+
     })
+
+
+
 }
 eg_counting();

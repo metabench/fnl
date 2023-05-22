@@ -12,7 +12,7 @@ let counter = mfp({
 
     return_type: 'observable',
     return_subtype: 'number'
-}, (max = 10, ms_delay = 1000) => obs((next, complete, error) => {
+}, (max = 4, ms_delay = 500) => obs((next, complete, error) => {
     let c = 0;
     const tick = () => {
         if (c < max) {
