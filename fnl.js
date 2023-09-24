@@ -3,7 +3,7 @@
 //const Evented_Class = lang.Evented_Class;
 //const get_a_sig = lang.get_a_sig;
 //const get_truth_map_from_arr = lang.get_truth_map_from_arr;
-const {each, Evented_Class, get_a_sig, get_truth_map_from_arr, tof, tf, mfp, deep_sig, clone, def} = require('lang-mini');
+const {each, Evented_Class, get_a_sig, get_truth_map_from_arr, tof, tf, mfp, deep_sig, clone, def, is_array} = require('lang-mini');
 const fn_io_transform = require('./fn-io-transform');
 
 
@@ -1163,7 +1163,7 @@ const observable = function(fn_inner, opts) {
 
             // If it is async, we can't use those fns?
 
-            const [stop, pause, resume] = fn_inner(data => {
+            const res_fn_inner = fn_inner(data => {
                 // And could apply a filter here.
                 //  Could apply a number of filters.
 
@@ -1327,22 +1327,32 @@ const observable = function(fn_inner, opts) {
                 
             }, status, log) || [];
 
+            if (is_array(res_fn_inner)) {
+                const [stop, pause, resume] = res_fn_inner;
+
+                if (stop) res.stop = stop;
+                if (pause) res.pause = pause;
+                if (resume) res.resume = resume;
+            
+                if (pause && resume) {
+                    res.delay = (ms) => {
+                        pause();
+                        res.raise('paused');
+                        setTimeout(() => {
+                            res.resume();
+                            res.raise('resumed');
+                        }, ms);
+                    }
+                }
+
+            }
+
+
+            //
+
             // status before log!!!
     
-            if (stop) res.stop = stop;
-            if (pause) res.pause = pause;
-            if (resume) res.resume = resume;
-        
-            if (pause && resume) {
-                res.delay = (ms) => {
-                    pause();
-                    res.raise('paused');
-                    setTimeout(() => {
-                        res.resume();
-                        res.raise('resumed');
-                    }, ms);
-                }
-            }
+            
         }, 0);
     
         res.next = handler => {
