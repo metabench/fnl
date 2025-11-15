@@ -1689,8 +1689,8 @@ const seq = (q_obs) => {
                 obs_q_item.on('next', data => {
                     next(data);
                 });
-                obs_q_item.on('error', error => {
-                    error(error);
+                obs_q_item.on('error', err => {
+                    error(err);
                 });
                 obs_q_item.on('complete', data => {
                     c++;
